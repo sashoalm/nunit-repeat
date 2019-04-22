@@ -16,4 +16,4 @@ The script comes with an example nunit project that mocks failing tests by keepi
 
 First build the MockFailingTests project that comes with the script, then execute this:
 
-    python nunit-repeat.py --retries 3 -- .\MockFailingTests\packages\NUnit.ConsoleRunner.3.10.0\tools\nunit3-console.exe .\MockFailingTests\MockFailingTests\bin\Debug\MockFailingTests.dll
+    python nunit-repeat.py --max-retries 3 -- .\MockFailingTests\packages\NUnit.ConsoleRunner.3.10.0\tools\nunit3-console.exe .\MockFailingTests\MockFailingTests\bin\Debug\MockFailingTests.dll

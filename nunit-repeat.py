@@ -102,7 +102,7 @@ def main():
     args = sys.argv
     # Get the number of retries.
     try:
-        retries = int(args[args.index('--retries') + 1])
+        retries = int(args[args.index('--max-retries') + 1])
     except:
         retries = 3
     # Get the nunit command line.
