@@ -35,8 +35,8 @@ def getParent(tree):
 def setParent(tree, parent):
     tree.attrib['__my_parent__'] = parent
 
-# Updates a parent test suite of a failed test that has passed on rerun.
-def updateTestSuite(tree):
+# Updates a parent test suite or a run of a failed test that has passed on rerun.
+def updateTestResult(tree):
     tree.attrib['failed'] = str(int(tree.attrib['failed']) - 1)
     tree.attrib['passed'] = str(int(tree.attrib['passed']) + 1)
     if tree.attrib['failed'] == '0':
@@ -52,8 +52,16 @@ def replaceTest(tree1, tree2):
 def updateParentTestSuites(testCase):
     suite = getParent(testCase)
     while suite and suite.tag == 'test-suite':
-        updateTestSuite(suite)
+        updateTestResult(suite)
         suite = getParent(suite)
+
+# Updates the parent test run.
+def updateParentTestRun(testCase):
+    run = getParent(testCase)
+    while run and run.tag != 'test-run':
+        run = getParent(run)
+    if run:
+        updateTestResult(run)
 
 # Merges the results from a rerun into the original test.
 # Any failed test that has become successful upon rerun is updated.
@@ -63,6 +71,7 @@ def mergeRerunResults(tree1, tree2):
         if test2.attrib['result'] == 'Passed':
             replaceTest(failedTest, test2)
             updateParentTestSuites(failedTest)
+            updateParentTestRun(failedTest)
 
 # Checks whether we have any failed tests.
 def hasFailedTests(tree):
