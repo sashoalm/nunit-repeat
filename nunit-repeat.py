@@ -86,22 +86,22 @@ def writeFailedTests(tree):
         f.write(name + '\n')
 
 # Retries all the failing tests, until all pass or we run out of retries.
-def retryFailedTests(args, retries):
+def retryFailedTests(args, retries, resultsFile):
     # Add the testfilter to nunit's command line.
     args.append('--testlist')
     args.append('testlist.txt')
     # Load the test results from the first invocation.
-    tree = ET.parse('TestResult.xml')
+    tree = ET.parse(resultsFile)
     addParentInfo(tree.getroot())
     # Run the retries.
     while retries > 0 and hasFailedTests(tree):
         retries -= 1
         writeFailedTests(tree)
         subprocess.call(args)
-        mergeRerunResults(tree, ET.parse('TestResult.xml'))
+        mergeRerunResults(tree, ET.parse(resultsFile))
     # Write the final results.
     stripParentInfo(tree.getroot())
-    tree.write('TestResult.xml')
+    tree.write(resultsFile)
     # Check if we still have failing tests.
     if hasFailedTests(tree):
         raise Exception("There are failed tests even after retrying.")
@@ -114,12 +114,17 @@ def main():
         retries = int(args[args.index('--max-retries') + 1])
     except:
         retries = 3
+    # Get results file name
+    try:
+        resultsFile = args[args.index('--results-file')+1]
+    except:
+        resultsFile = 'TestResult.xml'
     # Get the nunit command line.
     args = args[args.index('--')+1:]
     # Invoke nunit the first time.
     subprocess.call(args)
     # Retry any failed tests.
-    retryFailedTests(args, retries)
+    retryFailedTests(args, retries, resultsFile)
 
 # Execute main function.
 main()
