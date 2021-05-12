@@ -1,10 +1,12 @@
 # Overview
 
-This script will call NUnit, then examine its TestResult.xml to see if there are any failed tests. If there are, it will execute it again only for the failed tests, and then it will see if any are successful and update the loaded TestResult.xml accordingly. It will repeat this until all tests are successful or it has run out of retries.
+This script will call NUnit, then examine its TestResult.xml to see if there are any failed tests. If there are, it will execute it again only for the failed tests, and then it will see if any are successful and update the loaded TestResult.xml accordingly. It will repeat this until all tests are successful or it has run out of retries. If you're saving results to a different filename you can use the results-file parameter to specify it.
 
 ## Command line
 
 `--retries <n>`: How many times to retry the tests if there are still failing tests. If ommitted the default value is 3.
+
+`--results-file <s>`: the filename of the result file being written by the test suite
 
 `--`: Indicates that the arguments afterwards should be passed to nunit.
 
