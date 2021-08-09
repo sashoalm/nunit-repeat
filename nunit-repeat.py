@@ -41,6 +41,9 @@ def updateTestResult(tree):
     tree.attrib['passed'] = str(int(tree.attrib['passed']) + 1)
     if tree.attrib['failed'] == '0':
         tree.attrib['result'] = 'Passed'
+        failureNodes = tree.findall('failure')
+        for failureNode in failureNodes:
+            tree.remove(failureNode)
 
 # In-place replaces a failed test with a successful one.
 def replaceTest(tree1, tree2):
