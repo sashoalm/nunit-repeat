@@ -35,12 +35,15 @@ def getParent(tree):
 def setParent(tree, parent):
     tree.attrib['__my_parent__'] = parent
 
-# Updates a parent test suite of a failed test that has passed on rerun.
-def updateTestSuite(tree):
+# Updates a parent test suite or a run of a failed test that has passed on rerun.
+def updateTestResult(tree):
     tree.attrib['failed'] = str(int(tree.attrib['failed']) - 1)
     tree.attrib['passed'] = str(int(tree.attrib['passed']) + 1)
     if tree.attrib['failed'] == '0':
         tree.attrib['result'] = 'Passed'
+        failureNodes = tree.findall('failure')
+        for failureNode in failureNodes:
+            tree.remove(failureNode)
 
 # In-place replaces a failed test with a successful one.
 def replaceTest(tree1, tree2):
@@ -52,8 +55,16 @@ def replaceTest(tree1, tree2):
 def updateParentTestSuites(testCase):
     suite = getParent(testCase)
     while suite and suite.tag == 'test-suite':
-        updateTestSuite(suite)
+        updateTestResult(suite)
         suite = getParent(suite)
+
+# Updates the parent test run.
+def updateParentTestRun(testCase):
+    run = getParent(testCase)
+    while run and run.tag != 'test-run':
+        run = getParent(run)
+    if run:
+        updateTestResult(run)
 
 # Merges the results from a rerun into the original test.
 # Any failed test that has become successful upon rerun is updated.
@@ -63,6 +74,7 @@ def mergeRerunResults(tree1, tree2):
         if test2.attrib['result'] == 'Passed':
             replaceTest(failedTest, test2)
             updateParentTestSuites(failedTest)
+            updateParentTestRun(failedTest)
 
 # Checks whether we have any failed tests.
 def hasFailedTests(tree):
@@ -77,22 +89,22 @@ def writeFailedTests(tree):
         f.write(name + '\n')
 
 # Retries all the failing tests, until all pass or we run out of retries.
-def retryFailedTests(args, retries):
+def retryFailedTests(args, retries, resultsFile):
     # Add the testfilter to nunit's command line.
     args.append('--testlist')
     args.append('testlist.txt')
     # Load the test results from the first invocation.
-    tree = ET.parse('TestResult.xml')
+    tree = ET.parse(resultsFile)
     addParentInfo(tree.getroot())
     # Run the retries.
     while retries > 0 and hasFailedTests(tree):
         retries -= 1
         writeFailedTests(tree)
         subprocess.call(args)
-        mergeRerunResults(tree, ET.parse('TestResult.xml'))
+        mergeRerunResults(tree, ET.parse(resultsFile))
     # Write the final results.
     stripParentInfo(tree.getroot())
-    tree.write('TestResult.xml')
+    tree.write(resultsFile)
     # Check if we still have failing tests.
     if hasFailedTests(tree):
         raise Exception("There are failed tests even after retrying.")
@@ -105,12 +117,17 @@ def main():
         retries = int(args[args.index('--max-retries') + 1])
     except:
         retries = 3
+    # Get results file name
+    try:
+        resultsFile = args[args.index('--results-file')+1]
+    except:
+        resultsFile = 'TestResult.xml'
     # Get the nunit command line.
     args = args[args.index('--')+1:]
     # Invoke nunit the first time.
     subprocess.call(args)
     # Retry any failed tests.
-    retryFailedTests(args, retries)
+    retryFailedTests(args, retries, resultsFile)
 
 # Execute main function.
 main()
